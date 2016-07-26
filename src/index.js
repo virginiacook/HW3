@@ -5,6 +5,7 @@ import SearchBar from './components/search_bar';
 import Note from './components/note';
 import Immutable from 'immutable';
 import Dimensions from 'react-dimensions';
+import * as firebasedb from './firebasedb';
 
 
 // import './style.scss';
@@ -19,11 +20,18 @@ class App extends Component {
     };
     // this.search = debounce(this.search, 300);
 
-    this.delete = this.delete.bind(this);
+    this.deleteNote = this.deleteNote.bind(this);
     this.updateNote = this.updateNote.bind(this);
     this.updateZ = this.updateZ.bind(this);
   }
 
+  componentDidMount() {
+    firebasedb.fetchNotes((snapshot) => {
+      this.setState({
+        notes: Immutable.Map(snapshot.val()),
+      });
+    });
+  }
   // adding a note -- text is title
   create(text) {
     const note = {
@@ -36,18 +44,20 @@ class App extends Component {
       text: '',
     };
     this.state.highestZ++;
-    this.setState({
-      notes: this.state.notes.set(text, note),
-    });
+    // this.setState({
+    //   notes: this.state.notes.set(text, note),
+    // });
+    firebasedb.add(note);
   }
   // UPDATE note
   updateNote(id, field) {
-    this.setState({
-      // change z index here
-      // empty object and create new object
-      // call field with {text: 'hello'} as fields, an object not text
-      notes: this.state.notes.update(id, (note) => { return Object.assign({}, note, field); }),
-    });
+    // this.setState({
+    //   // change z index here
+    //   // empty object and create new object
+    //   // call field with {text: 'hello'} as fields, an object not text
+    //   notes: this.state.notes.update(id, (note) => { return Object.assign({}, note, field); }),
+    // });
+    firebasedb.update(id, field);
   }
 
   updateZ(id, note1) {
@@ -80,16 +90,17 @@ class App extends Component {
     }
   }
 
-  delete(id) {
+  deleteNote(id) {
     console.log('delete note with id' + id);
-    this.setState({
-      notes: this.state.notes.delete(id),
-    });
+    // this.setState({
+    //   notes: this.state.notes.deleteNote(id),
+    // });
+    firebasedb.remove(id);
   }
   renderNotes() {
     return this.state.notes.entrySeq().map(([id, note]) => {
   // perhaps you might return some jsx here :-)
-      return <Note id={id} note={note} onNoteDelete={this.delete} updateNote={this.updateNote} changeZ={this.updateZ} key={id} />;
+      return <Note id={id} note={note} onNoteDelete={this.deleteNote} updateNote={this.updateNote} changeZ={this.updateZ} key={id} />;
     });
   }
   render() {
